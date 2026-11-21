@@ -1,0 +1,37 @@
+:root {
+  --bg-main: #111318; --bg-panel: #1A1D24; --bg-input: #15181E;
+  --border-color: #2A2F3A; --text-main: #E2E8F0; --text-muted: #94A3B8;
+  --accent-gold: #C5A059; --accent-gold-hover: #D4AF37;
+  --danger: #EF4444; --success: #10B981;
+}
+* { box-sizing: border-box; }
+body { background-color: var(--bg-main); color: var(--text-main); font-family: 'Inter', system-ui, sans-serif; margin: 0; line-height: 1.5; }
+::-webkit-scrollbar { width: 8px; } ::-webkit-scrollbar-track { background: var(--bg-main); } ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+
+/* Otomatis menghias elemen dasar HTML kamu */
+button, .btn { background-color: var(--bg-panel); color: var(--text-main); border: 1px solid var(--border-color); border-radius: 4px; padding: 8px 16px; cursor: pointer; font-weight: 500; transition: 0.2s; }
+button:hover, .btn:hover { background-color: var(--bg-hover, #232730); border-color: var(--text-muted); }
+button[type="submit"], .btn-primary { background-color: var(--accent-gold); color: #111318; border-color: var(--accent-gold); font-weight: 600; }
+button[type="submit"]:hover, .btn-primary:hover { background-color: var(--accent-gold-hover); border-color: var(--accent-gold-hover); }
+button.danger, .btn-danger { background-color: transparent; color: var(--danger); border-color: var(--danger); }
+button.danger:hover, .btn-danger:hover { background-color: var(--danger); color: #fff; }
+
+input, select, textarea { width: 100%; background-color: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-main); border-radius: 4px; padding: 10px 12px; outline: none; margin-bottom: 12px; }
+input:focus, select:focus, textarea:focus { border-color: var(--accent-gold); }
+
+table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 10px; }
+th { text-align: left; padding: 12px; border-bottom: 2px solid var(--border-color); color: var(--text-muted); font-size: 12px; text-transform: uppercase; }
+td { padding: 12px; border-bottom: 1px solid var(--border-color); }
+tr:nth-child(even) { background-color: rgba(255,255,255,0.015); }
+
+.panel, .card, .sidebar { background-color: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 6px; padding: 20px; margin-bottom: 20px; }
+.app-container { display: flex; min-height: 100vh; }
+.sidebar { width: 250px; border-right: 1px solid var(--border-color); padding: 20px; display: flex; flex-direction: column; }
+.main-content { flex: 1; padding: 24px; overflow-y: auto; }
+.nav-link { display: block; padding: 10px 12px; color: var(--text-muted); text-decoration: none; border-radius: 4px; margin-bottom: 4px; }
+.nav-link:hover, .nav-link.active { background-color: rgba(197, 160, 89, 0.1); color: var(--accent-gold); }
+.landing-container { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; text-align: center; }
+.landing-logo { max-width: 180px; margin-bottom: 24px; }
+.text-muted { color: var(--text-muted); }
+.flex { display: flex; gap: 12px; align-items: center; }
+.flex-between { display: flex; justify-content: space-between; align-items: center; }
