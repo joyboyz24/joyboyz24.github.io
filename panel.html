@@ -1,9 +1,208 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JOY-POS | Panel Kontrol</title>
-    <style>
-        body { background-color: #1e1e1e; color: #e0e0e0; font-family: sans-serif; padding: 20px; }
-        .container { max-width: 600px; margin: 0 auto; background: #2c
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JOY POS — Panel Kontrol</title>
+<style>
+:root{
+  --bg:#061021;
+  --navy:#0b1d3a;
+  --surface:#102547;
+  --surface-2:#173461;
+  --border:rgba(255,255,255,.09);
+  --text:#f1f5f9;
+  --muted:#8fa3c4;
+  --gold:#d4af37;
+  --gold-soft:rgba(212,175,55,.15);
+  --accent:#10b981;
+  --accent-soft:rgba(16,185,129,.15);
+  --danger:#ef4444;
+  --font:'Inter','Segoe UI',system-ui,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:var(--font);
+  background:radial-gradient(circle at top left,#153363 0%,var(--bg) 58%);
+  color:var(--text);
+  min-height:100vh;
+  padding:24px;
+}
+.container{max-width:1200px;margin:0 auto}
+
+/* Header */
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:16px}
+.header h1{font-size:1.5rem;font-weight:700;display:flex;align-items:center;gap:10px}
+.status-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  background:var(--accent-soft);color:var(--accent);
+  padding:6px 12px;border-radius:99px;font-size:.78rem;font-weight:600;
+  border:1px solid rgba(16,185,129,.25);
+}
+.status-dot{width:8px;height:8px;background:var(--accent);border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%{opacity:1}50%{opacity:.4}100%{opacity:1}}
+
+/* Summary Cards */
+.summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-bottom:24px}
+.card{
+  background:rgba(16,37,71,.84);border:1px solid var(--border);
+  border-radius:16px;padding:20px;box-shadow:0 8px 24px rgba(0,0,0,.2);
+}
+.card-label{font-size:.78rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;font-weight:600}
+.card-value{font-size:1.75rem;font-weight:700;color:var(--text)}
+.card-value.gold{color:var(--gold)}
+.card-value.accent{color:var(--accent)}
+
+/* Table */
+.table-panel{
+  background:rgba(16,37,71,.84);border:1px solid var(--border);
+  border-radius:16px;padding:20px;box-shadow:0 8px 24px rgba(0,0,0,.2);
+}
+.table-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.table-header h3{font-size:1.1rem;font-weight:700}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.88rem}
+th,td{padding:14px 16px;text-align:left;border-bottom:1px solid var(--border);vertical-align:middle}
+th{color:var(--muted);font-weight:600;font-size:.75rem;text-transform:uppercase;letter-spacing:.5px;background:rgba(6,16,33,.5)}
+tr:hover td{background:rgba(255,255,255,.02)}
+.badge{padding:4px 10px;border-radius:99px;font-size:.72rem;font-weight:600;display:inline-block}
+.badge-ok{background:var(--accent-soft);color:var(--accent);border:1px solid rgba(16,185,129,.25)}
+
+.empty-state{text-align:center;padding:40px 20px;color:var(--muted)}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <h1>📊 JOY POS <span style="color:var(--muted);font-weight:400;font-size:1rem">| Panel Kontrol</span></h1>
+    <div class="status-badge">
+      <span class="status-dot"></span>
+      Live Real-time
+    </div>
+  </div>
+
+  <!-- Ringkasan Hari Ini -->
+  <div class="summary-grid">
+    <div class="card">
+      <div class="card-label">Total Pendapatan (Hari Ini)</div>
+      <div class="card-value gold" id="sum-revenue">Rp 0</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Jumlah Transaksi</div>
+      <div class="card-value accent" id="sum-count">0</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Rata-rata per Transaksi</div>
+      <div class="card-value" id="sum-avg">Rp 0</div>
+    </div>
+  </div>
+
+  <!-- Tabel Transaksi -->
+  <div class="table-panel">
+    <div class="table-header">
+      <h3>🕒 Riwayat Transaksi Terkini</h3>
+      <span style="font-size:.78rem;color:var(--muted)" id="last-update">Memuat data...</span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Waktu</th>
+            <th>No. Nota</th>
+            <th>Kasir</th>
+            <th>Item</th>
+            <th>Metode</th>
+            <th style="text-align:right">Total</th>
+            <th style="text-align:center">Status</th>
+          </tr>
+        </thead>
+        <tbody id="trx-tbody">
+          <tr><td colspan="7" class="empty-state">Menunggu data dari kasir...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script type="importmap">
+{"imports":{"firebase/app":"https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js","firebase/firestore":"https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"}}
+</script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCgFbvNg0BATiaTyy1zQWQcSHmUuwEE3eM",
+  authDomain: "joy-pos-32251.firebaseapp.com",
+  projectId: "joy-pos-32251",
+  storageBucket: "joy-pos-32251.firebasestorage.app",
+  messagingSenderId: "445897636009",
+  appId: "1:445897636009:web:100e02326cba0f177ad1b8"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const rp = n => 'Rp ' + Number(n||0).toLocaleString('id-ID');
+const todayStr = new Date().toDateString();
+
+// Query: Ambil semua transaksi, urutkan dari yang terbaru
+const q = query(collection(db, "transactions"), orderBy("date", "desc"));
+
+onSnapshot(q, (snapshot) => {
+  const tbody = document.getElementById('trx-tbody');
+  const lastUpdateEl = document.getElementById('last-update');
+  
+  let todayRevenue = 0;
+  let todayCount = 0;
+  let html = '';
+
+  if (snapshot.empty) {
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-state">Belum ada transaksi tercatat.</td></tr>';
+  } else {
+    snapshot.forEach((doc) => {
+      const t = doc.data();
+      const dateObj = new Date(t.date);
+      
+      // Hitung hanya yang hari ini
+      if (dateObj.toDateString() === todayStr) {
+        todayRevenue += Number(t.total || 0);
+        todayCount++;
+      }
+
+      const timeStr = dateObj.toLocaleString('id-ID', { 
+        day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' 
+      });
+      
+      const itemsStr = (t.items || []).map(i => `${i.name} (x${i.qty})`).join(', ');
+      const methodStr = t.method === 'CASH' ? 'Tunai' : (t.paymentDetail || t.method);
+
+      html += `
+        <tr>
+          <td>${timeStr}</td>
+          <td style="font-weight:600;color:var(--gold)">${t.id || '-'}</td>
+          <td>${t.employeeName || 'Unknown'}</td>
+          <td style="max-width:250px;font-size:.82rem;color:var(--muted)">${itemsStr}</td>
+          <td>${methodStr}</td>
+          <td style="text-align:right;font-weight:700">${rp(t.total)}</td>
+          <td style="text-align:center"><span class="badge badge-ok">${t.status === 'completed' ? 'Sukses' : t.status}</span></td>
+        </tr>
+      `;
+    });
+    tbody.innerHTML = html;
+  }
+
+  // Update Summary Cards
+  document.getElementById('sum-revenue').textContent = rp(todayRevenue);
+  document.getElementById('sum-count').textContent = todayCount;
+  document.getElementById('sum-avg').textContent = todayCount > 0 ? rp(Math.round(todayRevenue / todayCount)) : 'Rp 0';
+  
+  lastUpdateEl.textContent = `Terakhir diperbarui: ${new Date().toLocaleTimeString('id-ID')}`;
+}, (error) => {
+  console.error("Error listening to transactions:", error);
+  document.getElementById('trx-tbody').innerHTML = '<tr><td colspan="7" class="empty-state" style="color:var(--danger)">Gagal memuat data. Periksa koneksi atau aturan Firestore.</td></tr>';
+});
+</script>
+</body>
+</html>
