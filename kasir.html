@@ -383,27 +383,30 @@ th{color:var(--muted);font-weight:600;font-size:.7rem;text-transform:uppercase;l
 {"imports":{"firebase/app":"https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js","firebase/firestore":"https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"}}
 </script>
 <script type="module">
-let initializeApp,getFirestore,collection,doc,setDoc,onSnapshot,updateDoc;
+let initializeApp,getFirestore,collection,doc,setDoc,onSnapshot,updateDoc,getDoc,writeBatch;
 let FIREBASE_OK = true;
 try{
   const A = await import("firebase/app");
   const F = await import("firebase/firestore");
   ({initializeApp}=A);
-  ({getFirestore,collection,doc,setDoc,onSnapshot,updateDoc}=F);
+  ({getFirestore,collection,doc,setDoc,onSnapshot,updateDoc,getDoc,writeBatch}=F);
 }catch(_){
   FIREBASE_OK = false;
   initializeApp=()=>({});getFirestore=()=>({});
   collection=()=>null;doc=()=>null;onSnapshot=()=>()=>{};
   setDoc=updateDoc=()=>Promise.reject(new Error("Offline"));
+  getDoc=()=>Promise.reject(new Error("Offline"));
+  writeBatch=()=>({set:()=>{},commit:()=>Promise.reject(new Error("Offline"))});
 }
 
+/* === PERBAIKAN 1: CONFIG GANTI KE PROJECT BARU (joy-pos-32251) === */
 const firebaseConfig = {
-  apiKey: "AIzaSyDfRg19ShL0V11V4imN7Q_c2yL8czj_BIo",
-  authDomain: "joy-pos-cloud.firebaseapp.com",
-  projectId: "joy-pos-cloud",
-  storageBucket: "joy-pos-cloud.firebasestorage.app",
-  messagingSenderId: "901812081611",
-  appId: "1:901812081611:web:da9f31b337ac7abd599c4e"
+  apiKey: "AIzaSyCgFbvNg0BATiaTyy1zQWQcSHmUuwEE3eM",
+  authDomain: "joy-pos-32251.firebaseapp.com",
+  projectId: "joy-pos-32251",
+  storageBucket: "joy-pos-32251.firebasestorage.app",
+  messagingSenderId: "445897636009",
+  appId: "1:445897636009:web:100e02326cba0f177ad1b8"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -411,7 +414,9 @@ const db = getFirestore(app);
 
 const STORAGE_MODE_KEY = 'joy_pos_storage_mode';
 const LOCAL_DB_KEY = 'joy_pos_local_v1';
-let mode = (!FIREBASE_OK || localStorage.getItem(STORAGE_MODE_KEY) === 'local') ? 'local' : 'cloud';
+
+/* === PERBAIKAN 3: PAKSA COBA CLOUD DULU (project baru), fallback local saat error === */
+let mode = FIREBASE_OK ? 'cloud' : 'local';
 
 const DEFAULT_SEED = {
   outlets: [{ id:'OUT-1', name:'Cabang Pusat', address:'Jl. Sudirman No. 1', photo:'' }],
@@ -483,6 +488,20 @@ function updateModeBadge(){
     badge.textContent = '● Offline';
     badge.className = 'badge badge-ref';
   }
+}
+
+/* === PERBAIKAN 2: AUTO-SEED KE FIRESTORE SAAT KOSONG (biar bisa login besok) === */
+async function seedIfEmpty(){
+  const snap = await getDoc(doc(db,'settings','main'));
+  if(snap.exists()) return; // sudah ada data, jangan seed ulang
+  const d = DEFAULT_SEED;
+  const b = writeBatch(db);
+  d.outlets.forEach(o => b.set(doc(db,'outlets',o.id), o));
+  d.employees.forEach(e => b.set(doc(db,'employees',e.id), e));
+  d.products.forEach(p => b.set(doc(db,'products',p.id), p));
+  b.set(doc(db,'settings','main'), d.settings);
+  await b.commit();
+  toast('Data awal berhasil dimuat ke Cloud');
 }
 
 /* === LOGIN KASIR (HANYA KASIR / BUKAN OWNER) === */
@@ -746,28 +765,39 @@ window.checkoutOrder = async () => {
     status: 'completed'
   };
 
-  if(mode === 'local'){
+  try{
+    if(mode === 'local'){
+      const local = readLocal();
+      local.transactions = [trx, ...(local.transactions||[])];
+      local.products = (local.products||[]).map(p => {
+        const found = cart.find(c => c.id === p.id);
+        if(!found) return p;
+        return { ...p, stock: Math.max(0, (Number(p.stock)||0) - found.qty) };
+      });
+      local.settings = updatedSettings;
+      writeLocal(local);
+      loadFromLocal();
+    }else{
+      await setDoc(doc(db, 'transactions', trx.id), trx);
+      await setDoc(doc(db, 'settings', 'main'), updatedSettings, { merge:true });
+      for(const item of cart){
+        const prod = state.products.find(p => p.id === item.id);
+        if(prod){
+          await updateDoc(doc(db, 'products', item.id), {
+            stock: Math.max(0, (Number(prod.stock)||0) - item.qty)
+          });
+        }
+      }
+    }
+  }catch(err){
+    console.error('Gagal simpan:', err);
+    // Simpan ke local dulu biar transaksi tidak hilang saat cloud error
     const local = readLocal();
     local.transactions = [trx, ...(local.transactions||[])];
-    local.products = (local.products||[]).map(p => {
-      const found = cart.find(c => c.id === p.id);
-      if(!found) return p;
-      return { ...p, stock: Math.max(0, (Number(p.stock)||0) - found.qty) };
-    });
     local.settings = updatedSettings;
     writeLocal(local);
     loadFromLocal();
-  }else{
-    await setDoc(doc(db, 'transactions', trx.id), trx);
-    await setDoc(doc(db, 'settings', 'main'), updatedSettings, { merge:true });
-    for(const item of cart){
-      const prod = state.products.find(p => p.id === item.id);
-      if(prod){
-        await updateDoc(doc(db, 'products', item.id), {
-          stock: Math.max(0, (Number(prod.stock)||0) - item.qty)
-        });
-      }
-    }
+    toast('Tersimpan offline (cloud bermasalah)', 'err');
   }
 
   cart = [];
@@ -1003,19 +1033,28 @@ window.addEventListener('storage', e => {
 window.addEventListener('online', updateModeBadge);
 window.addEventListener('offline', updateModeBadge);
 
+/* === INISIALISASI: COBA CLOUD DULU, FALLBACK LOKAL SAAT ERROR === */
 if(mode === 'local'){
   loadFromLocal();
 }else{
-  updateModeBadge();
-  onSnapshot(collection(db,'outlets'), s => { state.outlets = s.docs.map(d=>({id:d.id,...d.data()})); renderLoginOptions(); renderAll(); });
-  onSnapshot(collection(db,'employees'), s => { state.employees = s.docs.map(d=>({id:d.id,...d.data()})); renderLoginOptions(); renderAll(); });
-  onSnapshot(collection(db,'products'), s => { state.products = s.docs.map(d=>({id:d.id,...d.data()})); renderProducts(); });
-  onSnapshot(collection(db,'transactions'), s => { state.transactions = s.docs.map(d=>({id:d.id,...d.data()})); renderHistory(); });
-  onSnapshot(collection(db,'paymentMethods'), s => { state.paymentMethods = s.docs.map(d=>({id:d.id,...d.data()})); renderPaymentSelect(); });
-  onSnapshot(doc(db,'settings','main'), s => {
-    if(s.exists()) state.settings = { ...state.settings, ...s.data() };
-    renderAll();
-  });
+  try{
+    await seedIfEmpty();
+    updateModeBadge();
+    onSnapshot(collection(db,'outlets'), s => { state.outlets = s.docs.map(d=>({id:d.id,...d.data()})); renderLoginOptions(); renderAll(); });
+    onSnapshot(collection(db,'employees'), s => { state.employees = s.docs.map(d=>({id:d.id,...d.data()})); renderLoginOptions(); renderAll(); });
+    onSnapshot(collection(db,'products'), s => { state.products = s.docs.map(d=>({id:d.id,...d.data()})); renderProducts(); });
+    onSnapshot(collection(db,'transactions'), s => { state.transactions = s.docs.map(d=>({id:d.id,...d.data()})); renderHistory(); });
+    onSnapshot(collection(db,'paymentMethods'), s => { state.paymentMethods = s.docs.map(d=>({id:d.id,...d.data()})); renderPaymentSelect(); });
+    onSnapshot(doc(db,'settings','main'), s => {
+      if(s.exists()) state.settings = { ...state.settings, ...s.data() };
+      renderAll();
+    });
+  }catch(err){
+    console.warn('Cloud init gagal, fallback ke LocalStorage:', err);
+    mode = 'local';
+    localStorage.setItem(STORAGE_MODE_KEY, 'local');
+    loadFromLocal();
+  }
 }
 </script>
 </body>
