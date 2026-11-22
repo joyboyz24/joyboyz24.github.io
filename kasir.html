@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="JOY POS Kasir">
 <link rel="manifest" href="./manifest.json">
 <meta name="theme-color" content="#0b1d3a">
 <title id="k-doc-title">JOY POS — Kasir</title>
@@ -240,6 +243,7 @@ th{color:var(--muted);font-weight:600;font-size:.7rem;text-transform:uppercase;l
       <input type="password" id="k-login-pin" class="form-control" placeholder="••••" maxlength="6" inputmode="numeric" onkeydown="if(event.key==='Enter')loginCashier()">
     </div>
     <button class="btn btn-gold" style="width:100%;padding:12px" onclick="loginCashier()">Buka Kasir</button>
+    <button type="button" class="btn btn-ghost btn-sm" id="k-install-login-btn" style="width:100%;margin-top:8px;display:none" onclick="installCashierApp()">📲 Instal Aplikasi Kasir di Toko</button>
     <div class="login-err" id="k-login-err"></div>
   </div>
 </div>
@@ -260,6 +264,7 @@ th{color:var(--muted);font-weight:600;font-size:.7rem;text-transform:uppercase;l
       <span class="badge badge-info" id="k-mode-badge">● LocalStorage</span>
       <span class="badge badge-gold" id="k-next-inv">Nota: 0001</span>
       <span class="badge badge-ok" id="k-opt-badge" title="Pengoptimalan otomatis setiap 1 jam">⚡ Auto-opt: 60m</span>
+      <button type="button" class="btn btn-gold btn-sm" id="k-install-top-btn" style="display:none" onclick="installCashierApp()">📲 Instal App</button>
       <button type="button" class="btn btn-ghost btn-sm" onclick="runHourlyOptimizer(true)">🔄 Optimasi</button>
       <button type="button" class="btn btn-ghost btn-sm" onclick="openSampleReceiptModal()">🧾 Uji Struk</button>
       <button type="button" class="btn btn-ghost btn-sm" id="k-bt-status-btn" onclick="connectBluetoothPrinter()">📶 BT Struk</button>
@@ -480,6 +485,57 @@ let lastReceiptData = null;
 let btCharacteristic = null;
 let activePaperSize = '80';
 let receiptCopyType = 'Pelanggan';
+
+/* === PWA INSTALL STATE === */
+let deferredInstallPrompt = null;
+
+function isStandaloneApp(){
+  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+}
+
+function updateInstallButtons(){
+  const show = Boolean(deferredInstallPrompt) && !isStandaloneApp();
+  const topBtn = document.getElementById('k-install-top-btn');
+  const loginBtn = document.getElementById('k-install-login-btn');
+  if(topBtn) topBtn.style.display = show ? 'inline-flex' : 'none';
+  if(loginBtn) loginBtn.style.display = show ? 'inline-flex' : 'none';
+}
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  updateInstallButtons();
+});
+
+window.addEventListener('appinstalled', () => {
+  deferredInstallPrompt = null;
+  updateInstallButtons();
+  toast('Aplikasi Kasir berhasil diinstal di perangkat toko');
+});
+
+window.installCashierApp = async () => {
+  if(isStandaloneApp()){
+    return toast('Aplikasi Kasir sudah berjalan sebagai aplikasi terinstal');
+  }
+  if(!deferredInstallPrompt){
+    return toast('Buka menu browser (⋮) lalu pilih "Instal aplikasi" / "Tambahkan ke layar utama"');
+  }
+  deferredInstallPrompt.prompt();
+  const choice = await deferredInstallPrompt.userChoice;
+  if(choice && choice.outcome === 'accepted'){
+    toast('Menginstal Aplikasi Kasir...');
+  }
+  deferredInstallPrompt = null;
+  updateInstallButtons();
+};
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch((err) => {
+      console.warn('SW register info:', err);
+    });
+  });
+}
 
 /* === ANTI-BUG & KEAMANAN STATE === */
 let isCheckingOut = false;
@@ -1293,6 +1349,7 @@ function renderHistory(){
 function renderAll(){
   updateModeBadge();
   updateOptBadge();
+  updateInstallButtons();
   const s = state.settings;
   const appName = sanitizeText(s.appName || 'JOY POS', 40);
   document.getElementById('k-doc-title').textContent = appName + ' — Kasir';
