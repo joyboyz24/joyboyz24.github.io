@@ -1,7 +1,7 @@
 {
-  "name": "JOY POS",
-  "short_name": "JOY POS",
-  "start_url": "./",
+  "name": "JOY POS — Kasir",
+  "short_name": "JOY Kasir",
+  "start_url": "./kasir.html",
   "scope": "./",
   "display": "standalone",
   "background_color": "#0b1d3a",
