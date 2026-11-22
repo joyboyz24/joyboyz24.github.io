@@ -263,7 +263,6 @@ th{color:var(--muted);font-weight:600;font-size:.7rem;text-transform:uppercase;l
       <button type="button" class="btn btn-ghost btn-sm" onclick="runHourlyOptimizer(true)">🔄 Optimasi</button>
       <button type="button" class="btn btn-ghost btn-sm" onclick="openSampleReceiptModal()">🧾 Uji Struk</button>
       <button type="button" class="btn btn-ghost btn-sm" id="k-bt-status-btn" onclick="connectBluetoothPrinter()">📶 BT Struk</button>
-      <button type="button" class="btn btn-ghost btn-sm" onclick="lockCashierSession()">🔒 Kunci</button>
     </div>
   </header>
 
@@ -445,7 +444,6 @@ const STORAGE_MODE_KEY = 'joy_pos_storage_mode';
 const LOCAL_DB_KEY = 'joy_pos_local_v1';
 const MAX_PIN_ATTEMPTS = 5;
 const PIN_LOCK_MS = 30000;
-const AUTO_LOCK_IDLE_MS = 30 * 60 * 1000; // 30 menit idle
 const OPTIMIZER_CYCLE_MS = 60 * 60 * 1000; // 1 jam
 
 let mode = FIREBASE_OK ? 'cloud' : 'local';
@@ -487,7 +485,6 @@ let receiptCopyType = 'Pelanggan';
 let isCheckingOut = false;
 let pinFailCount = 0;
 let pinLockedUntil = 0;
-let lastActivityAt = Date.now();
 let optCountdownMin = 60;
 let optMinuteTimer = null;
 let optHourTimer = null;
@@ -516,7 +513,6 @@ function toast(msg, type='ok'){
   setTimeout(()=>el.remove(), 2800);
 }
 
-/* Global Anti-Bug Catcher */
 window.addEventListener('error', (ev) => {
   console.error('[POS Error]:', ev.message || ev.error);
   isCheckingOut = false;
@@ -581,7 +577,7 @@ async function seedIfEmpty(){
   toast('Data awal berhasil dimuat ke Cloud');
 }
 
-/* === KEAMANAN LOGIN & SESI KASIR === */
+/* === KEAMANAN LOGIN KASIR === */
 function setLoginErr(msg){
   const el = document.getElementById('k-login-err');
   if(el) el.textContent = msg || '';
@@ -642,7 +638,6 @@ window.loginCashier = () => {
   pinFailCount = 0;
   pinLockedUntil = 0;
   setLoginErr('');
-  lastActivityAt = Date.now();
 
   session = {
     employeeId: emp.id,
@@ -657,18 +652,6 @@ window.loginCashier = () => {
   startHourlyOptimizer();
   renderAll();
 };
-
-window.lockCashierSession = () => {
-  session = null;
-  document.getElementById('cashier-app').classList.remove('active');
-  document.getElementById('cashier-login').style.display = 'flex';
-  document.getElementById('k-login-pin').value = '';
-  setLoginErr('Sesi kasir dikunci');
-};
-
-['pointerdown', 'keydown', 'touchstart'].forEach(evt => {
-  window.addEventListener(evt, () => { lastActivityAt = Date.now(); }, { passive: true });
-});
 
 /* === KATALOG & KERANJANG (ANTI-BUG STOK & ANGKA) === */
 window.renderProducts = () => {
@@ -987,19 +970,11 @@ function updateOptBadge(){
 
 window.runHourlyOptimizer = (manual=false) => {
   try{
-    if(session && (Date.now() - lastActivityAt) >= AUTO_LOCK_IDLE_MS){
-      lockCashierSession();
-      toast('Sesi dikunci otomatis karena tidak aktif', 'err');
-      return;
-    }
-
-    // 1. Bersihkan elemen toast/modal nyangkut
     const toastBox = document.getElementById('toast-box');
     if(toastBox && toastBox.children.length > 3){
       while(toastBox.children.length > 3) toastBox.firstElementChild.remove();
     }
 
-    // 2. Deduplikasi transaksi & rapikan urutan
     if(Array.isArray(state.transactions) && state.transactions.length > 0){
       const seen = new Map();
       for(const t of state.transactions){
@@ -1010,11 +985,9 @@ window.runHourlyOptimizer = (manual=false) => {
         .slice(0, 500);
     }
 
-    // 3. Sinkronkan keranjang dengan stok terkini & render ulang tampilan
     syncCartWithStock(true);
     renderAll();
 
-    // 4. Jika mode lokal, rapikan penyimpanan lokal
     if(mode === 'local'){
       const local = readLocal();
       if(Array.isArray(local.transactions)){
