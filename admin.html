@@ -42,21 +42,70 @@ body{font-family:var(--font);background:radial-gradient(circle at top left,#1533
 
 .admin-shell{display:none;min-height:100vh}
 .admin-shell.active{display:flex}
-.sidebar{width:220px;background:rgba(11,29,58,.95);border-right:1px solid var(--border);padding:20px 0;position:fixed;height:100vh;overflow-y:auto}
-.sidebar-brand{padding:0 20px 20px;border-bottom:1px solid var(--border);margin-bottom:12px}
-.sidebar-brand h2{font-size:1.1rem;font-weight:700;color:var(--gold)}
-.sidebar-brand small{font-size:.68rem;color:var(--muted);letter-spacing:1px;display:block;margin-top:2px}
-.nav-section{padding:0 16px;margin-bottom:8px}
-.nav-section-title{font-size:.65rem;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;padding:0 12px;margin-bottom:6px;font-weight:600}
-.nav-item{display:flex;align-items:center;gap:10px;padding:11px 16px;color:var(--muted);cursor:pointer;font-size:.84rem;font-weight:500;transition:.15s;border-radius:10px;margin-bottom:2px}
-.nav-item:hover{background:rgba(255,255,255,.03);color:var(--text)}
+
+.sidebar{
+  width:220px;
+  background:rgba(11,29,58,.96);
+  border-right:1px solid var(--border);
+  padding:16px 0 112px;
+  position:fixed;
+  top:0;left:0;bottom:0;
+  overflow-y:auto;
+  z-index:80;
+}
+.sidebar-brand{
+  padding:0 16px 14px;
+  border-bottom:1px solid var(--border);
+  margin-bottom:12px;
+}
+.sidebar-brand h2{
+  font-size:1.05rem;
+  font-weight:800;
+  color:var(--gold);
+  line-height:1.2;
+}
+.sidebar-brand .brand-quote{
+  font-size:.68rem;
+  color:#cbd5e1;
+  font-style:italic;
+  display:block;
+  margin-top:4px;
+  line-height:1.3;
+}
+.nav-section{padding:0 12px;margin-bottom:8px}
+.nav-section-title{font-size:.64rem;color:var(--muted);letter-spacing:1.4px;text-transform:uppercase;padding:0 10px;margin-bottom:6px;font-weight:600}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;color:var(--muted);cursor:pointer;font-size:.83rem;font-weight:500;transition:.15s;border-radius:10px;margin-bottom:2px}
+.nav-item:hover{background:rgba(255,255,255,.04);color:var(--text)}
 .nav-item.active{background:var(--gold-soft);color:var(--gold)}
-.nav-item .icon{font-size:1rem;width:20px;text-align:center}
-.sidebar-footer{margin-top:auto;padding:16px 20px;border-top:1px solid var(--border)}
-.user-info{display:flex;align-items:center;gap:10px;margin-bottom:10px}
-.user-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--gold),#8b7355);display:flex;align-items:center;justify-content:center;font-weight:700;color:#09152b;font-size:.85rem;flex-shrink:0}
-.user-name{font-size:.82rem;font-weight:600}
-.user-role{font-size:.68rem;color:var(--gold);letter-spacing:1px;text-transform:uppercase}
+.nav-item .icon{font-size:1rem;width:20px;text-align:center;flex-shrink:0}
+
+/* Pojok kiri bawah: Auto-opt & Keluar */
+.sidebar-footer{
+  position:fixed;
+  left:0;
+  bottom:0;
+  width:220px;
+  padding:10px 12px;
+  background:rgba(8,21,43,.98);
+  border-top:1px solid var(--border);
+  z-index:90;
+}
+.optimizer-status{
+  font-size:.7rem;
+  color:var(--text);
+  display:flex;
+  align-items:center;
+  gap:6px;
+  margin-bottom:8px;
+  font-weight:600;
+}
+.optimizer-status .dot{
+  width:7px;height:7px;
+  background:var(--accent);
+  border-radius:50%;
+  flex-shrink:0;
+}
+
 .main{margin-left:220px;flex:1;min-height:100vh}
 .topbar{background:rgba(11,29,58,.9);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:70}
 .topbar h2{font-size:1.1rem;font-weight:700}
@@ -141,58 +190,76 @@ textarea.form-control{min-height:80px;resize:vertical}
 
 .empty{text-align:center;padding:30px;color:var(--muted);font-size:.88rem}
 .section-divider{height:1px;background:linear-gradient(90deg,transparent,var(--border),transparent);margin:20px 0}
-.optimizer-status{font-size:.7rem;color:var(--muted);display:flex;align-items:center;gap:6px}
-.optimizer-status .dot{width:6px;height:6px;background:var(--accent);border-radius:50%}
 
-/* SETTINGS LAYOUT - Rapi & Compact */
-.settings-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-}
+.settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.checkbox-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;margin:16px 0}
+.panel-actions{display:flex;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:1px solid var(--border);gap:10px;flex-wrap:wrap}
+.panel-actions .btn{min-width:180px}
 
-.checkbox-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 8px;
-  margin: 16px 0;
-}
-
-.panel-actions {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 20px;
-  padding-top: 16px;
-  border-top: 1px solid var(--border);
-}
-
-.panel-actions .btn {
-  min-width: 180px;
-}
+/* Laporan PDF Sheet */
+#pdf-report-sheet{display:none}
 
 @media(max-width:900px){
-  .sidebar{width:68px}
-  .sidebar-brand h2,.sidebar-brand small,.nav-item span:not(.icon),.user-name,.user-role,.nav-section-title{display:none}
-  .nav-item{justify-content:center;padding:14px 0}
-  .sidebar-footer{padding:16px 12px}
+  .sidebar{width:68px;padding:12px 0 108px}
+  .sidebar-brand{padding:0 6px 12px;text-align:center}
+  .sidebar-brand h2{font-size:.76rem;letter-spacing:.3px}
+  .sidebar-brand .brand-quote{font-size:.54rem;line-height:1.25}
+  .nav-item span:not(.icon),.nav-section-title{display:none}
+  .nav-item{justify-content:center;padding:12px 0}
+  .sidebar-footer{width:68px;padding:8px 6px}
+  .optimizer-status{justify-content:center;font-size:.6rem;gap:4px;text-align:center}
+  .sidebar-footer .btn{padding:6px 4px;font-size:.68rem}
   .main{margin-left:68px}
   .content{padding:18px}
   .topbar{padding:14px 18px}
   .topbar h2{font-size:1rem}
   .chart-grid{grid-template-columns:1fr}
   .summary-grid{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
-  .settings-grid {
-    grid-template-columns: 1fr;
+  .settings-grid{grid-template-columns:1fr}
+  .checkbox-grid{grid-template-columns:1fr}
+  .panel-actions{justify-content:stretch}
+  .panel-actions .btn{width:100%}
+}
+
+@media print{
+  @page{size:A4 portrait;margin:12mm}
+  body{background:#ffffff !important;color:#0f172a !important}
+  body > *:not(#pdf-report-sheet){display:none !important}
+  #pdf-report-sheet{
+    display:block !important;
+    width:100%;
+    background:#ffffff;
+    color:#0f172a;
+    font-family:'Inter','Segoe UI',Arial,sans-serif;
   }
-  .checkbox-grid {
-    grid-template-columns: 1fr;
+  .pdf-header{
+    border-bottom:2px solid #0f172a;
+    padding-bottom:10px;
+    margin-bottom:14px;
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:12px;
   }
-  .panel-actions {
-    justify-content: stretch;
+  .pdf-summary{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:8px;
+    margin-bottom:14px;
   }
-  .panel-actions .btn {
-    width: 100%;
+  .pdf-sum-card{
+    border:1px solid #cbd5e1;
+    border-radius:6px;
+    padding:8px 10px;
+    background:#f8fafc;
   }
+  .pdf-sum-card small{display:block;font-size:10px;color:#475569;text-transform:uppercase}
+  .pdf-sum-card strong{font-size:13px;color:#0f172a}
+  .pdf-table{width:100%;border-collapse:collapse;font-size:11px}
+  .pdf-table thead{display:table-header-group}
+  .pdf-table th,.pdf-table td{border:1px solid #cbd5e1;padding:6px 8px;text-align:left;vertical-align:top}
+  .pdf-table th{background:#e2e8f0;color:#0f172a;font-weight:700}
+  .pdf-table tr{break-inside:avoid;page-break-inside:avoid}
 }
 </style>
 </head>
@@ -240,8 +307,8 @@ textarea.form-control{min-height:80px;resize:vertical}
 <div class="admin-shell" id="admin-app">
   <aside class="sidebar">
     <div class="sidebar-brand">
-      <h2>JOY POS</h2>
-      <small>Admin Control</small>
+      <h2 id="sb-brand-title">JOY POS</h2>
+      <span class="brand-quote">"Kami ada karena kamu Ade"</span>
     </div>
     <div class="nav-section">
       <div class="nav-section-title">Utama</div>
@@ -259,21 +326,16 @@ textarea.form-control{min-height:80px;resize:vertical}
       <div class="nav-section-title">Sistem</div>
       <div class="nav-item" onclick="switchTab('settings',this)"><span class="icon">⚙️</span><span>Pengaturan</span></div>
     </div>
-    <div class="sidebar-footer">
-      <div class="user-info">
-        <div class="user-avatar">AS</div>
-        <div>
-          <div class="user-name">Ade Kurnia Sandy</div>
-          <div class="user-role">Owner</div>
-        </div>
-      </div>
-      <div class="optimizer-status" style="margin-bottom:10px">
-        <span class="dot"></span>
-        <span>Auto-opt: <span id="opt-timer">60</span>m</span>
-      </div>
-      <button class="btn btn-ghost btn-sm" style="width:100%" onclick="logoutAdmin()">Keluar</button>
-    </div>
   </aside>
+
+  <!-- POJOK KIRI BAWAH: AUTO-OPT & KELUAR -->
+  <div class="sidebar-footer">
+    <div class="optimizer-status">
+      <span class="dot"></span>
+      <span>Auto-opt: <span id="opt-timer">60m</span></span>
+    </div>
+    <button class="btn btn-ghost btn-sm" style="width:100%" onclick="logoutAdmin()">Keluar</button>
+  </div>
 
   <div class="main">
     <div class="topbar">
@@ -305,13 +367,13 @@ textarea.form-control{min-height:80px;resize:vertical}
 
       <!-- TRANSAKSI -->
       <div class="tab-content" id="tab-transactions">
-        <div class="page-header"><h1>Riwayat Transaksi</h1><p>Kelola dan export semua data transaksi</p></div>
+        <div class="page-header"><h1>Riwayat Transaksi</h1><p>Kelola dan cetak laporan PDF semua transaksi</p></div>
         <div class="panel">
           <div class="panel-head">
             <h3>Semua Transaksi</h3>
             <div style="display:flex;gap:10px;flex-wrap:wrap">
               <input type="date" id="trx-filter-date" class="form-control" style="width:auto" onchange="renderTransactions()">
-              <button class="btn btn-info btn-sm" onclick="exportCSV()">📥 Export CSV</button>
+              <button class="btn btn-gold btn-sm" onclick="exportPDF()">📄 Laporan PDF</button>
             </div>
           </div>
           <div class="table-wrap">
@@ -411,12 +473,12 @@ textarea.form-control{min-height:80px;resize:vertical}
             </div>
             <div class="form-group">
               <label>Nama Perusahaan</label>
-              <input type="text" id="s-company" class="form-control">
+              <input type="text" id="s-company" class="form-control" oninput="syncCompanyInputs('s-company')">
             </div>
           </div>
           <div class="form-group" style="margin-top:16px">
             <label>Logo Aplikasi (Upload Gambar)</label>
-            <input type="file" id="s-logoFile" class="form-control" accept="image/*" onchange="handleLogoUpload()">
+            <input type="file" id="s-logoFile" class="form-control" accept="image/*" onchange="handleLogoUpload(event)">
             <div style="display:flex;align-items:center;gap:12px;margin-top:12px">
               <img id="s-logoPreview" style="max-width:80px;max-height:80px;border-radius:8px;display:none;border:1px solid var(--border)">
               <input type="hidden" id="s-appLogo">
@@ -474,7 +536,7 @@ textarea.form-control{min-height:80px;resize:vertical}
           <div class="settings-grid">
             <div class="form-group">
               <label>Nama Toko / Perusahaan</label>
-              <input type="text" id="s-company2" class="form-control">
+              <input type="text" id="s-company2" class="form-control" oninput="syncCompanyInputs('s-company2')">
             </div>
             <div class="form-group">
               <label>Pajak / PPN (%)</label>
@@ -567,7 +629,7 @@ textarea.form-control{min-height:80px;resize:vertical}
     <div class="form-group"><label>Stok</label><input type="number" id="prod-stock" class="form-control" min="0"></div>
     <div class="form-group">
       <label>Foto Produk</label>
-      <input type="file" id="prod-photo" class="form-control" accept="image/*" onchange="handleProdPhoto()">
+      <input type="file" id="prod-photo" class="form-control" accept="image/*" onchange="handleProdPhoto(event)">
       <img id="prod-photo-preview" style="max-width:120px;margin-top:8px;border-radius:8px;display:none;border:1px solid var(--border)">
       <input type="hidden" id="prod-photo-data">
     </div>
@@ -634,7 +696,7 @@ textarea.form-control{min-height:80px;resize:vertical}
     <div class="form-group"><label>Detail (No. Rek / Nomor HP / Link QRIS)</label><input type="text" id="pay-detail" class="form-control"></div>
     <div class="form-group">
       <label>Gambar QRIS (opsional)</label>
-      <input type="file" id="pay-image" class="form-control" accept="image/*" onchange="handlePayImage()">
+      <input type="file" id="pay-image" class="form-control" accept="image/*" onchange="handlePayImage(event)">
       <img id="pay-image-preview" style="max-width:140px;margin-top:8px;border-radius:8px;display:none;border:1px solid var(--border)">
       <input type="hidden" id="pay-image-data">
     </div>
@@ -645,14 +707,17 @@ textarea.form-control{min-height:80px;resize:vertical}
   </div>
 </div>
 
+<!-- SHEET LAPORAN PDF -->
+<div id="pdf-report-sheet"></div>
+
 <div id="toast-box"></div>
 
 <script type="importmap">
 {"imports":{"firebase/app":"https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js","firebase/firestore":"https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"}}
 </script>
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, doc, setDoc, onSnapshot, deleteDoc, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { initializeApp } from "firebase/app";
+import { getFirestore, collection, doc, setDoc, onSnapshot, deleteDoc, getDocs, writeBatch } from "firebase/firestore";
 
 const DEFAULT_OWNER_PIN = '444033';
 const MAX_LOGIN_ATTEMPTS = 5;
@@ -710,6 +775,12 @@ function toast(msg, type='ok'){
   setTimeout(()=>el.remove(), 3000);
 }
 
+window.syncCompanyInputs = (sourceId) => {
+  const val = document.getElementById(sourceId).value;
+  if(sourceId !== 's-company') document.getElementById('s-company').value = val;
+  if(sourceId !== 's-company2') document.getElementById('s-company2').value = val;
+};
+
 window.loginAdmin = async () => {
   if(!checkLoginLock()) return;
   const pin = document.getElementById('admin-pin').value.trim();
@@ -749,8 +820,8 @@ window.openForgotModal = () => {
 };
 
 window.confirmResetPin = async () => {
-  const confirm = document.getElementById('forgot-confirm').value.trim();
-  if(confirm !== 'RESET') return toast('Ketik "RESET" untuk konfirmasi', 'err');
+  const confirmVal = document.getElementById('forgot-confirm').value.trim();
+  if(confirmVal !== 'RESET') return toast('Ketik "RESET" untuk konfirmasi', 'err');
   try{
     const snap = await getDocs(collection(db,'employees'));
     const owners = snap.docs.map(d=>({id:d.id,...d.data()})).filter(e=>e.role==='owner');
@@ -784,7 +855,15 @@ function initListeners(){
   onSnapshot(collection(db,'transactions'), s => { state.transactions = s.docs.map(d=>({id:d.id,...d.data()})); renderTransactions(); updateDashboard(); });
   onSnapshot(collection(db,'outlets'), s => { state.outlets = s.docs.map(d=>({id:d.id,...d.data()})); renderOutlets(); populateOutletSelect(); });
   onSnapshot(collection(db,'paymentMethods'), s => { state.paymentMethods = s.docs.map(d=>({id:d.id,...d.data()})); renderPayments(); });
-  onSnapshot(doc(db,'settings','main'), s => { if(s.exists()){ state.settings = s.data(); fillSettingsForm(); }});
+  onSnapshot(doc(db,'settings','main'), s => {
+    if(s.exists()){
+      state.settings = s.data();
+      fillSettingsForm();
+      if(state.settings.appName){
+        document.getElementById('sb-brand-title').textContent = state.settings.appName;
+      }
+    }
+  });
 }
 
 function startOptimizer(){
@@ -798,7 +877,10 @@ function startOptimizer(){
   }, 60000);
   setTimeout(runOptimizer, OPTIMIZER_INTERVAL);
 }
-function updateOptimizerDisplay(){ const el = document.getElementById('opt-timer'); if(el) el.textContent = optimizerMinutes; }
+function updateOptimizerDisplay(){
+  const el = document.getElementById('opt-timer');
+  if(el) el.textContent = optimizerMinutes + 'm';
+}
 function runOptimizer(){
   try{
     renderProducts(); renderEmployees(); renderTransactions(); renderOutlets(); renderPayments(); updateDashboard();
@@ -880,27 +962,80 @@ function renderTransactions(){
     </tr>`).join('') : '<tr><td colspan="8" class="empty">Tidak ada transaksi</td></tr>';
 }
 
-window.exportCSV = () => {
+window.exportPDF = () => {
   const filterDate = document.getElementById('trx-filter-date').value;
   let list = [...state.transactions].sort((a,b)=>new Date(b.date)-new Date(a.date));
-  if(filterDate){ const fd = new Date(filterDate).toDateString(); list = list.filter(t => new Date(t.date).toDateString() === fd); }
-  if(!list.length) return toast('Tidak ada data untuk diexport', 'err');
-  const headers = ['Tanggal','No. Nota','Outlet','Kasir','Nama Pelanggan','Channel','Item','Subtotal','Diskon','Pajak','Total','Metode','Status'];
-  const rows = list.map(t => [
-    new Date(t.date).toLocaleString('id-ID'), t.id||'', t.outletName||'', t.employeeName||'',
-    t.customerName||'', t.channel||'',
-    (t.items||[]).map(i=>`${i.name} x${i.qty} @${i.price}`).join(' | '),
-    t.subtotal||0, t.discount||0, t.tax||0, t.total||0,
-    t.method==='CASH'?'Tunai':(t.paymentDetail||t.method||''), t.status||''
-  ]);
-  let csv = '\uFEFF' + headers.join(',') + '\n';
-  rows.forEach(r => { csv += r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',') + '\n'; });
-  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = `transaksi_${filterDate || 'semua'}_${Date.now()}.csv`; a.click();
-  URL.revokeObjectURL(url);
-  toast('CSV berhasil diunduh');
+  if(filterDate){
+    const fd = new Date(filterDate).toDateString();
+    list = list.filter(t => new Date(t.date).toDateString() === fd);
+  }
+  if(!list.length) return toast('Tidak ada data transaksi untuk laporan PDF', 'err');
+
+  const totalTrx = list.length;
+  const totalDiscount = list.reduce((s,t) => s + Number(t.discount||0), 0);
+  const totalTax = list.reduce((s,t) => s + Number(t.tax||0), 0);
+  const totalOmzet = list.reduce((s,t) => s + Number(t.total||0), 0);
+
+  const company = state.settings?.company || 'JOY CORPORATION';
+  const appName = state.settings?.appName || 'JOY POS';
+  const address = state.settings?.address || '';
+  const phone = state.settings?.phone || '';
+  const periodeLabel = filterDate
+    ? new Date(filterDate).toLocaleDateString('id-ID',{weekday:'long',day:'2-digit',month:'long',year:'numeric'})
+    : 'Semua Tanggal';
+
+  const sheet = document.getElementById('pdf-report-sheet');
+  sheet.innerHTML = `
+    <div class="pdf-header">
+      <div>
+        <div style="font-size:16px;font-weight:800">${company}</div>
+        <div style="font-size:12px;color:#334155">${appName} — Laporan Riwayat Transaksi</div>
+        ${address ? `<div style="font-size:11px;color:#475569;margin-top:2px">${address}</div>` : ''}
+        ${phone ? `<div style="font-size:11px;color:#475569">Telp: ${phone}</div>` : ''}
+      </div>
+      <div style="text-align:right;font-size:11px;color:#334155">
+        <div><strong>Periode:</strong> ${periodeLabel}</div>
+        <div><strong>Dicetak:</strong> ${new Date().toLocaleString('id-ID')}</div>
+      </div>
+    </div>
+
+    <div class="pdf-summary">
+      <div class="pdf-sum-card"><small>Jumlah Transaksi</small><strong>${totalTrx}</strong></div>
+      <div class="pdf-sum-card"><small>Total Diskon</small><strong>${rp(totalDiscount)}</strong></div>
+      <div class="pdf-sum-card"><small>Total Pajak</small><strong>${rp(totalTax)}</strong></div>
+      <div class="pdf-sum-card"><small>Total Pendapatan</small><strong>${rp(totalOmzet)}</strong></div>
+    </div>
+
+    <table class="pdf-table">
+      <thead>
+        <tr>
+          <th>Waktu</th>
+          <th>No. Nota</th>
+          <th>Outlet</th>
+          <th>Kasir</th>
+          <th>Item</th>
+          <th>Metode</th>
+          <th>Total</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${list.map(t => `
+          <tr>
+            <td>${new Date(t.date).toLocaleString('id-ID',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}</td>
+            <td><strong>${t.id||'-'}</strong></td>
+            <td>${t.outletName||'-'}</td>
+            <td>${t.employeeName||'-'}</td>
+            <td>${(t.items||[]).map(i=>`${i.name} x${i.qty}`).join(', ')||'-'}</td>
+            <td>${t.method==='CASH'?'Tunai':(t.paymentDetail||t.method||'-')}</td>
+            <td style="font-weight:700">${rp(t.total)}</td>
+            <td>${t.status==='completed'?'Sukses':(t.status||'-')}</td>
+          </tr>`).join('')}
+      </tbody>
+    </table>
+  `;
+
+  setTimeout(() => window.print(), 120);
 };
 
 function renderProducts(){
@@ -1202,9 +1337,10 @@ window.handleLogoUpload = (e) => {
 };
 
 window.saveSettings = async () => {
+  const companyVal = sanitize(document.getElementById('s-company').value) || sanitize(document.getElementById('s-company2').value);
   const data = {
     appName: sanitize(document.getElementById('s-appName').value),
-    company: sanitize(document.getElementById('s-company').value) || sanitize(document.getElementById('s-company2').value),
+    company: companyVal,
     tax: Number(document.getElementById('s-tax').value)||0,
     address: sanitize(document.getElementById('s-address').value),
     phone: sanitize(document.getElementById('s-phone').value),
