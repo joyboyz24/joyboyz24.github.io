@@ -206,15 +206,37 @@ th{color:var(--muted);font-weight:600;font-size:.7rem;text-transform:uppercase;l
 .rs-l{border-top:1px dashed #64748b;margin:7px 0}
 .rs-r{display:flex;justify-content:space-between;gap:6px;margin:2px 0}
 
+/* Modal Pilih Printer APK Native */
+.bt-device-list{display:flex;flex-direction:column;gap:8px;margin:12px 0;max-height:240px;overflow-y:auto}
+.bt-device-item{
+  background:rgba(6,16,33,.7);border:1px solid var(--border);border-radius:12px;
+  padding:11px 14px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;
+}
+.bt-device-item:hover{border-color:var(--gold)}
+
 #toast-box{position:fixed;top:16px;right:16px;z-index:2000;display:flex;flex-direction:column;gap:8px}
 .toast{background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--accent);padding:11px 15px;border-radius:12px;font-size:.83rem;box-shadow:0 12px 30px rgba(0,0,0,.35)}
 .toast.err{border-left-color:var(--danger)}
 
+@page{
+  size: auto;
+  margin: 2mm;
+}
 @media print{
-  body *{visibility:hidden}
-  #print-area,#print-area *{visibility:visible}
-  #print-area{position:fixed;left:0;top:0;width:100%}
-  .receipt-sheet{border-radius:0;margin:0;max-width:100% !important}
+  html,body{height:auto !important;overflow:visible !important;background:#fff !important}
+  body > *:not(#m-receipt){display:none !important}
+  #m-receipt{
+    position:static !important;display:block !important;
+    background:none !important;padding:0 !important;inset:auto !important;
+  }
+  #m-receipt .modal{
+    background:#fff !important;border:none !important;box-shadow:none !important;
+    padding:0 !important;max-width:100% !important;max-height:none !important;overflow:visible !important;
+  }
+  #m-receipt .receipt-controls,
+  #m-receipt .receipt-toolbar,
+  #m-receipt .no-print{display:none !important}
+  .receipt-sheet{border-radius:0;margin:0;padding:2mm !important;page-break-inside:avoid}
 }
 @media(max-width:980px){
   .pos-grid{grid-template-columns:1fr}
@@ -402,12 +424,23 @@ th{color:var(--muted);font-weight:600;font-size:.7rem;text-transform:uppercase;l
       <div class="receipt-sheet paper-80" id="k-receipt-sheet"></div>
     </div>
 
-    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap">
-      <button type="button" class="btn btn-ghost btn-sm" onclick="downloadReceiptText()">💾 Simpan .TXT</button>
+    <div class="no-print" style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap">
       <button type="button" class="btn btn-info btn-sm" onclick="printBluetoothReceipt()">📶 Print Bluetooth</button>
-      <button type="button" class="btn btn-gold btn-sm" onclick="printReceiptBrowser()">🖨️ Cetak Struk</button>
+      <button type="button" class="btn btn-gold btn-sm" onclick="printReceiptBrowser()">🖨️ Cetak Browser</button>
       <button type="button" class="btn btn-ghost btn-sm" onclick="closeReceiptModal()">Tutup</button>
     </div>
+  </div>
+</div>
+
+<!-- MODAL PILIH PRINTER BLUETOOTH (KHUSUS APK ANDROID) -->
+<div class="modal-bg" id="m-bt-devices">
+  <div class="modal">
+    <div class="panel-head">
+      <h3>📶 Pilih Printer Bluetooth</h3>
+      <button type="button" class="btn btn-ghost btn-sm" onclick="closeBtModal()">Tutup</button>
+    </div>
+    <p class="sub-meta">Pilih printer thermal yang sudah dipasangkan (paired) di HP toko:</p>
+    <div class="bt-device-list" id="k-bt-device-list"></div>
   </div>
 </div>
 
@@ -447,9 +480,11 @@ const db = getFirestore(app);
 
 const STORAGE_MODE_KEY = 'joy_pos_storage_mode';
 const LOCAL_DB_KEY = 'joy_pos_local_v1';
+const SAVED_BT_MAC_KEY = 'joy_pos_bt_mac';
+const SAVED_BT_NAME_KEY = 'joy_pos_bt_name';
 const MAX_PIN_ATTEMPTS = 5;
 const PIN_LOCK_MS = 30000;
-const OPTIMIZER_CYCLE_MS = 60 * 60 * 1000; // 1 jam
+const OPTIMIZER_CYCLE_MS = 60 * 60 * 1000;
 
 let mode = FIREBASE_OK ? 'cloud' : 'local';
 
@@ -486,11 +521,34 @@ let btCharacteristic = null;
 let activePaperSize = '80';
 let receiptCopyType = 'Pelanggan';
 
+/* === DETEKSI APK NATIVE ANDROID === */
+function hasNativeApkPrinter(){
+  return typeof window.AndroidPrinter !== 'undefined' && window.AndroidPrinter !== null;
+}
+
+function updateBtButtonStatus(){
+  const btBtn = document.getElementById('k-bt-status-btn');
+  if(!btBtn) return;
+  if(hasNativeApkPrinter()){
+    const savedName = localStorage.getItem(SAVED_BT_NAME_KEY);
+    if(savedName){
+      btBtn.textContent = `📶 ${savedName}`;
+      btBtn.className = 'btn btn-info btn-sm';
+    }else{
+      btBtn.textContent = '📶 Pilih Printer';
+      btBtn.className = 'btn btn-ghost btn-sm';
+    }
+  }else if(btCharacteristic){
+    btBtn.textContent = '📶 BT Terhubung';
+    btBtn.className = 'btn btn-info btn-sm';
+  }
+}
+
 /* === PWA INSTALL STATE === */
 let deferredInstallPrompt = null;
 
 function isStandaloneApp(){
-  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  return hasNativeApkPrinter() || window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
 }
 
 function updateInstallButtons(){
@@ -510,30 +568,21 @@ window.addEventListener('beforeinstallprompt', (e) => {
 window.addEventListener('appinstalled', () => {
   deferredInstallPrompt = null;
   updateInstallButtons();
-  toast('Aplikasi Kasir berhasil diinstal di perangkat toko');
+  toast('Aplikasi Kasir berhasil diinstal');
 });
 
 window.installCashierApp = async () => {
-  if(isStandaloneApp()){
-    return toast('Aplikasi Kasir sudah berjalan sebagai aplikasi terinstal');
-  }
-  if(!deferredInstallPrompt){
-    return toast('Buka menu browser (⋮) lalu pilih "Instal aplikasi" / "Tambahkan ke layar utama"');
-  }
+  if(isStandaloneApp()) return toast('Aplikasi Kasir sudah berjalan sebagai aplikasi');
+  if(!deferredInstallPrompt) return toast('Buka menu browser (⋮) lalu pilih "Instal aplikasi"');
   deferredInstallPrompt.prompt();
-  const choice = await deferredInstallPrompt.userChoice;
-  if(choice && choice.outcome === 'accepted'){
-    toast('Menginstal Aplikasi Kasir...');
-  }
+  await deferredInstallPrompt.userChoice;
   deferredInstallPrompt = null;
   updateInstallButtons();
 };
 
-if('serviceWorker' in navigator){
+if('serviceWorker' in navigator && !hasNativeApkPrinter()){
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').catch((err) => {
-      console.warn('SW register info:', err);
-    });
+    navigator.serviceWorker.register('./sw.js').catch(()=>{});
   });
 }
 
@@ -594,7 +643,7 @@ function writeLocal(data){
   try{
     localStorage.setItem(LOCAL_DB_KEY, JSON.stringify(data));
   }catch(e){
-    toast('Penyimpanan lokal penuh, bersihkan riwayat lama', 'err');
+    toast('Penyimpanan lokal penuh', 'err');
   }
 }
 
@@ -612,7 +661,7 @@ function updateModeBadge(){
     badge.textContent = '● LocalStorage';
     badge.className = 'badge badge-info';
   }else if(navigator.onLine){
-    badge.textContent = '● Online Realtime';
+    badge.textContent = hasNativeApkPrinter() ? '● APK Online' : '● Online Realtime';
     badge.className = 'badge badge-ok';
   }else{
     badge.textContent = '● Offline';
@@ -630,7 +679,6 @@ async function seedIfEmpty(){
   d.products.forEach(p => b.set(doc(db,'products',p.id), p));
   b.set(doc(db,'settings','main'), d.settings);
   await b.commit();
-  toast('Data awal berhasil dimuat ke Cloud');
 }
 
 /* === KEAMANAN LOGIN KASIR === */
@@ -709,7 +757,7 @@ window.loginCashier = () => {
   renderAll();
 };
 
-/* === KATALOG & KERANJANG (ANTI-BUG STOK & ANGKA) === */
+/* === KATALOG & KERANJANG === */
 window.renderProducts = () => {
   const q = sanitizeText(document.getElementById('k-search').value || '', 60).toLowerCase();
   const onlyAvail = document.getElementById('k-stock-only').value === 'avail';
@@ -990,7 +1038,6 @@ window.checkoutOrder = async () => {
         }
       }
     }catch(err){
-      console.error('Gagal simpan cloud, simpan lokal:', err);
       const local = readLocal();
       local.transactions = [trx, ...(local.transactions||[])];
       local.products = (local.products||[]).map(p => {
@@ -1059,9 +1106,7 @@ window.runHourlyOptimizer = (manual=false) => {
     optCountdownMin = 60;
     updateOptBadge();
     if(manual) toast('Pengoptimalan sistem kasir selesai');
-  }catch(e){
-    console.error('[Hourly Optimizer]:', e);
-  }
+  }catch(e){}
 };
 
 function startHourlyOptimizer(){
@@ -1080,7 +1125,7 @@ function startHourlyOptimizer(){
   }, OPTIMIZER_CYCLE_MS);
 }
 
-/* === FITUR CETAK STRUK KOMPLIT === */
+/* === FITUR CETAK STRUK & BLUETOOTH NATIVE APK === */
 function applyPaperClass(){
   const sheet = document.getElementById('k-receipt-sheet');
   sheet.classList.remove('paper-58', 'paper-80');
@@ -1148,7 +1193,7 @@ function buildReceiptPlainText(trx){
     s.showSocial !== false && [s.ig,s.tt,s.wa,s.web].filter(Boolean).length
       ? center([s.ig,s.tt,s.wa,s.web].filter(Boolean).join(' | '))
       : '',
-    '\n\n'
+    '\n\n\n'
   ].filter(Boolean);
 
   return out.join('\n');
@@ -1243,6 +1288,15 @@ window.openReceiptModal = trx => {
 };
 
 window.closeReceiptModal = () => document.getElementById('m-receipt').classList.remove('active');
+window.closeBtModal = () => document.getElementById('m-bt-devices').classList.remove('active');
+
+window.selectNativeBtDevice = (mac, name) => {
+  localStorage.setItem(SAVED_BT_MAC_KEY, mac);
+  localStorage.setItem(SAVED_BT_NAME_KEY, name);
+  updateBtButtonStatus();
+  closeBtModal();
+  toast('Printer dipilih: ' + name);
+};
 
 window.printReceiptBrowser = () => {
   if(!lastReceiptData) return;
@@ -1260,21 +1314,35 @@ window.printReceiptBrowser = () => {
   }
 };
 
-window.downloadReceiptText = () => {
-  if(!lastReceiptData) return;
-  const txt = buildReceiptPlainText(lastReceiptData);
-  const blob = new Blob([txt], { type: 'text/plain;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `struk_${sanitizeText(lastReceiptData.id || 'nota', 20)}_${activePaperSize}mm.txt`;
-  a.click();
-  URL.revokeObjectURL(url);
-  toast('Struk (.TXT) berhasil disimpan');
-};
-
 window.connectBluetoothPrinter = async () => {
-  if(!navigator.bluetooth) return toast('Browser ini belum mendukung Web Bluetooth', 'err');
+  /* JALUR 1: APK ANDROID NATIVE (BLUETOOTH CLASSIC SPP) */
+  if(hasNativeApkPrinter()){
+    try{
+      const raw = window.AndroidPrinter.getPairedDevices();
+      const devices = JSON.parse(raw || '[]');
+      const listEl = document.getElementById('k-bt-device-list');
+      if(!devices.length){
+        listEl.innerHTML = '<p class="sub-meta">Belum ada printer terpasang. Pasangkan printer di Pengaturan Bluetooth HP dulu.</p>';
+      }else{
+        listEl.innerHTML = devices.map(d => `
+          <div class="bt-device-item" onclick="selectNativeBtDevice('${d.address}','${sanitizeText(d.name,40)}')">
+            <div>
+              <div style="font-weight:700;font-size:.88rem">${sanitizeText(d.name||'Printer BT',40)}</div>
+              <div class="sub-meta">${d.address}</div>
+            </div>
+            <span class="badge badge-gold">Pilih</span>
+          </div>
+        `).join('');
+      }
+      document.getElementById('m-bt-devices').classList.add('active');
+      return;
+    }catch(e){
+      return toast('Pastikan izin Bluetooth di APK sudah diizinkan', 'err');
+    }
+  }
+
+  /* JALUR 2: WEB BLUETOOTH (BROWSER) */
+  if(!navigator.bluetooth) return toast('Gunakan APK JOY Kasir untuk Bluetooth Classic', 'err');
   try{
     const device = await navigator.bluetooth.requestDevice({
       acceptAllDevices: true,
@@ -1287,12 +1355,8 @@ window.connectBluetoothPrinter = async () => {
       const writable = chars.find(c => c.properties.write || c.properties.writeWithoutResponse);
       if(writable){ btCharacteristic = writable; break; }
     }
-    const btBtn = document.getElementById('k-bt-status-btn');
-    if(btCharacteristic && btBtn){
-      btBtn.textContent = '📶 BT Terhubung';
-      btBtn.className = 'btn btn-info btn-sm';
-    }
-    toast(btCharacteristic ? 'Printer Bluetooth terhubung' : 'Perangkat terhubung (cek service cetak)', btCharacteristic ? 'ok' : 'err');
+    updateBtButtonStatus();
+    toast(btCharacteristic ? 'Printer Bluetooth terhubung' : 'Perangkat terhubung', btCharacteristic ? 'ok' : 'err');
   }catch(_){
     toast('Koneksi Bluetooth dibatalkan', 'err');
   }
@@ -1300,15 +1364,37 @@ window.connectBluetoothPrinter = async () => {
 
 window.printBluetoothReceipt = async () => {
   if(!lastReceiptData) return;
-  if(!btCharacteristic){
-    toast('Printer BT belum terhubung, cetak via browser');
-    printReceiptBrowser();
+  const copies = Math.max(1, Math.min(5, safeNonNegNum(document.getElementById('k-print-copies')?.value, 1)));
+  const receiptText = buildReceiptPlainText(lastReceiptData);
+
+  /* JALUR 1: CETAK LANGSUNG DARI APK NATIVE (1X KLIK TANPA DOWNLOAD) */
+  if(hasNativeApkPrinter()){
+    const savedMac = localStorage.getItem(SAVED_BT_MAC_KEY);
+    if(!savedMac){
+      toast('Pilih printer Bluetooth dulu di atas', 'err');
+      return connectBluetoothPrinter();
+    }
+    try{
+      const res = window.AndroidPrinter.printText(savedMac, receiptText, copies);
+      if(res === 'OK'){
+        toast(`Struk (${copies}x) tercetak langsung ke printer!`);
+      }else{
+        toast('Gagal cetak: ' + res, 'err');
+      }
+    }catch(e){
+      toast('Error koneksi printer Bluetooth APK', 'err');
+    }
     return;
   }
-  const copies = Math.max(1, Math.min(5, safeNonNegNum(document.getElementById('k-print-copies')?.value, 1)));
+
+  /* JALUR 2: WEB BLUETOOTH (BROWSER) */
+  if(!btCharacteristic){
+    toast('Printer BT belum terhubung', 'err');
+    return;
+  }
   const initCmd = new Uint8Array([0x1B, 0x40]);
   const feedCutCmd = new Uint8Array([0x0A, 0x0A, 0x1D, 0x56, 0x42, 0x00]);
-  const enc = new TextEncoder().encode(buildReceiptPlainText(lastReceiptData));
+  const enc = new TextEncoder().encode(receiptText);
 
   try{
     for(let c = 0; c < copies; c++){
@@ -1320,8 +1406,7 @@ window.printBluetoothReceipt = async () => {
     }
     toast(`Struk (${copies}x) dikirim ke printer Bluetooth`);
   }catch(_){
-    toast('Gagal mengirim ke Bluetooth, cetak via browser', 'err');
-    printReceiptBrowser();
+    toast('Gagal mengirim ke Bluetooth', 'err');
   }
 };
 
@@ -1350,6 +1435,7 @@ function renderAll(){
   updateModeBadge();
   updateOptBadge();
   updateInstallButtons();
+  updateBtButtonStatus();
   const s = state.settings;
   const appName = sanitizeText(s.appName || 'JOY POS', 40);
   document.getElementById('k-doc-title').textContent = appName + ' — Kasir';
@@ -1427,7 +1513,6 @@ if(mode === 'local'){
       renderAll();
     });
   }catch(err){
-    console.warn('Cloud init gagal, fallback ke LocalStorage:', err);
     mode = 'local';
     localStorage.setItem(STORAGE_MODE_KEY, 'local');
     loadFromLocal();
